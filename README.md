@@ -33,3 +33,23 @@ $ prisma generate
 ```shell
 $ prisma migrate dev
 ```
+
+- 数据库可视化
+
+```shell
+$ prisma studio
+```
+
+- 从数据库拉取对应生成 schema
+
+```shell
+$ prisma db pull
+```
+
+- 将 schema 推送至数据库
+
+```shell
+$ prisma db push
+```
+
+prisma migrate 与 prisma db push 很相似, 不过它们的使用场景不同, [查看详情](https://www.prisma.io/docs/concepts/components/prisma-migrate/db-push)
