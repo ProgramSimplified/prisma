@@ -1,80 +1,36 @@
+import 'reflect-metadata'
+import path from 'path'
+import { buildSchema } from 'type-graphql'
+import { ApolloServer } from 'apollo-server'
 import { PrismaClient } from '@prisma/client'
 
-const prisma = new PrismaClient()
+import { resolvers } from './prisma/generated/type-graphql'
 
-async function main() {
-  // 添加 user
-  // await prisma.user.create({
-  //   data: {
-  //     name: 'Alice',
-  //     email: 'alice@prisma.io',
-  //     posts: {
-  //       create: {
-  //         title: 'Hello World'
-  //       }
-  //     },
-  //     profile: {
-  //       create: {
-  //         bio: 'I like turtles'
-  //       }
-  //     }
-  //   }
-  // })
-
-  // 查询 user
-  // const allUsers = await prisma.user.findMany({
-  //   include: {
-  //     posts: true,
-  //     profile: true,
-  //   }
-  // })
-  // console.dir(allUsers, { depth: null })
-
-  // 更新 post
-  // const post = await prisma.post.update({
-  //   where: { id: 1 },
-  //   data: { published: true }
-  // })
-  // console.log(post)
-
-  // 通过条件查询
-  // const filteredPosts = await prisma.post.findMany({
-  //   where: {
-  //     OR: [{ title: { contains: 'hello' } }, { content: { contains: 'hello' } }],
-  //   },
-  // })
-  // console.log(filteredPosts)
-
-  // 创建 post, 并关联 User
-  // const post = await prisma.post.create({
-  //   data: {
-  //     title: 'Join us for Prisma Day 2020',
-  //     author: {
-  //       connect: { email: 'alice@prisma.io' },
-  //     },
-  //   },
-  // })
-  // console.log(post)
-
-  // 查询 profile 对应的 posts, 通过关联关系
-  // const posts = await prisma.profile
-  // .findUnique({
-  //   where: { id: 1 },
-  // })
-  // .user()
-  // .posts()
-  // console.log(posts)
-
-  // 删除 User
-  // const deletedUser = await prisma.user.delete({
-  //   where: { email: 'yangyong@nb.com' },
-  // })
+interface Context {
+  prisma: PrismaClient
 }
 
-main()
-  .catch((e) => {
-    throw e
+async function main() {
+  const schema = await buildSchema({
+    resolvers,
+    emitSchemaFile: path.resolve(__dirname, './generated-schema.graphql'),
+    validate: false,
+    authChecker: ({ context: context }) => {
+      console.log(context)
+      return false
+    }
   })
-  .finally(async () => {
-    await prisma.$disconnect()
+
+  const prisma = new PrismaClient()
+  await prisma.$connect()
+
+  const server = new ApolloServer({
+    schema: schema,
+    playground: true,
+    context: (): Context => ({ prisma })
   })
+  const { port } = await server.listen(4000)
+  console.log(`GraphQL is listening on ${port}`)
+}
+
+main().catch(console.error)
